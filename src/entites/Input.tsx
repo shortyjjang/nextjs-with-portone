@@ -9,6 +9,9 @@ export default function Input({
   className = "",
   value = "",
   onChange,
+  readOnly = false,
+  disabled = false,
+  onClick,
 }: {
   id?: string;
   type?: string;
@@ -18,6 +21,9 @@ export default function Input({
   className?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
+  disabled?: boolean;
+  onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
 }) {
   return (
     <input
@@ -31,6 +37,9 @@ export default function Input({
       className={`w-full p-2 border border-gray-300 focus:outline-none ${className}`}
       value={value}
       onChange={onChange}
+      readOnly={readOnly}
+      disabled={disabled}
+      onClick={onClick}
     />
   );
 }

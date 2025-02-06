@@ -1,6 +1,18 @@
 "use client";
+
+//주문형 네이버페이 버튼 호출 함수
+//반드시 찜하기가 포함되어야함
+//장바구니가 반드시 필요함
+
 import Script from "next/script";
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { PaymentContext } from "./PaymentProvider";
 
 declare global {
   interface Window {
@@ -8,6 +20,7 @@ declare global {
   }
 }
 
+// 주문형 네이버페이용 파람
 interface NpayParams {
   pg: string;
   pay_method: string;
@@ -21,42 +34,42 @@ interface NpayParams {
     saClickId: string;
   };
   naverProducts: {
-    id: string, //선택된 옵션이 없는 상품
-    name: string,
-    basePrice: number,
-    taxType: "TAX" | "TAX_FREE", //TAX or TAX_FREE
-    quantity: number,
-    infoUrl: string,
-    imageUrl: string,
+    id: string; //선택된 옵션이 없는 상품
+    name: string;
+    basePrice: number;
+    taxType: "TAX" | "TAX_FREE"; //TAX or TAX_FREE
+    quantity: number;
+    infoUrl: string;
+    imageUrl: string;
     shipping?: {
-      baseFee: number,
-      method: "DELIVERY",
-      feePayType: "PREPAYED",
+      baseFee: number;
+      method: "DELIVERY";
+      feePayType: "PREPAYED";
       feeRule: {
-        repeatByQty: 1,
-      },
-      groupId: string,
-    },
-    options?:  {
-      optionQuantity: number,
-      optionPrice: number,
-      selectionCode: string,
+        repeatByQty: 1;
+      };
+      groupId: string;
+    };
+    options?: {
+      optionQuantity: number;
+      optionPrice: number;
+      selectionCode: string;
       selections: {
-        code: string,
-        label: string,
-        value: string
-      }[]
-    }[]
-  }[]
-} 
+        code: string;
+        label: string;
+        value: string;
+      }[];
+    }[];
+  }[];
+}
 interface NZzimParams {
-  id: string,
-  name: string,
-  desc: string,
-  uprice: number,
-  url: string,
-  thumb: string,
-  image: string,
+  id: string;
+  name: string;
+  desc: string;
+  uprice: number;
+  url: string;
+  thumb: string;
+  image: string;
 }
 
 const initialNpayParams: NpayParams = {
@@ -73,72 +86,139 @@ const initialNpayParams: NpayParams = {
   },
   naverProducts: [],
 };
-export default function NpayButton() {
+interface ProductProps {
+  name: string;
+  price: number;
+  productId: string;
+  desc: string;
+  image: string;
+  optionGroups: {
+    name: string;
+    optionsName: string;
+    groupId: string;
+    options: {
+      name: string;
+      optionId: string;
+      additionalPrice: number;
+      quantity: number;
+    }[];
+  }[];
+  deliveryFee: number;
+}
+export default function NpayButton({ product }: { product: ProductProps }) {
   const naverBtn = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const id = useId();
   const [npayParams, setNpayParams] = useState<NpayParams>(initialNpayParams);
   const [nZzim, setNZzim] = useState<NZzimParams[]>([]);
+  const { onPaymentCallback } = useContext(PaymentContext);
   const onClickNaveZzim = () => {
-    console.log("찜하기");
     const { IMP } = window;
-    if(IMP){
+    if (IMP) {
       IMP.naver_zzim({
         naverProducts: nZzim,
       });
     }
   };
-  const onPaymentCallback = (rsp: any) => {
-    console.log(rsp);
-  }
   const onClickPayment = () => {
     const { IMP } = window;
     //핸들러 내에서 결제창 호출 함수 호출
-    if(IMP){
-      IMP.request_pay(
-        npayParams,
-        onPaymentCallback
-      );
+    if (IMP) {
+      IMP.request_pay(npayParams, onPaymentCallback);
     }
   };
-  const initNpay = () => {
+  const initNpay = useCallback(() => {
+    if (!naverBtn.current) return;
     const { naver } = window;
-
+    if(!naver) return;
+    if(document.getElementById("naverpay-script")) return;
     naver.NaverPayButton.apply({
       BUTTON_KEY: `${process.env.NEXT_PUBLIC_NAVER_PAY_BUTTON_KEY}`,
       TYPE: `${/Mobile/.test(navigator.userAgent) ? "M" : ""}A`, //버튼 스타일
       COLOR: 1, //버튼 색상타입
       COUNT: 2, // 2.네이버페이버튼 + 찜하기버튼, 1.네이버페이버튼
       ENABLE: "Y", //네이버페이 활성여부(재고부족 등에는 N으로 비활성처리)
-      EMBED_ID: `iamport-naverpay-product-button-${id}`, //네이버페이 버튼 UI가 부착될 HTML element의 ID
+      EMBED_ID: naverBtn.current.id, //네이버페이 버튼 UI가 부착될 HTML element의 ID
       BUY_BUTTON_HANDLER: onClickPayment,
       WISHLIST_BUTTON_HANDLER: onClickNaveZzim,
     });
     if (naverBtn.current) {
       naverBtn.current.innerHTML = "";
     }
-  };
+  }, [product, naverBtn.current]);
   useEffect(() => {
     setIsMobile(/Mobile/.test(navigator.userAgent));
   }, []);
+  useEffect(() => {
+    setNZzim([
+      {
+        id: product.productId,
+        name: product.name,
+        desc: product.desc,
+        uprice: product.price,
+        url: `${process.env.NEXT_PUBLIC_URL}/product/${product.productId}`,
+        thumb: product.image,
+        image: product.image,
+      },
+    ]);
+    setNpayParams({
+      ...npayParams,
+      naverProducts: [
+        {
+          id: product.productId, //선택된 옵션이 없는 상품
+          name: product.name,
+          basePrice: product.price,
+          taxType: "TAX", //TAX or TAX_FREE
+          quantity: 1,
+          infoUrl: `${process.env.NEXT_PUBLIC_URL}/product/${product.productId}`,
+          imageUrl: product.image,
+          shipping: {
+            baseFee: product.deliveryFee,
+            method: "DELIVERY",
+            feePayType: "PREPAYED",
+            feeRule: {
+              repeatByQty: 1,
+            },
+            groupId: "shipping01",
+          },
+          options: (product.optionGroups || []).flatMap((group) =>
+            group.options.map((option) => ({
+              optionQuantity: option.quantity,
+              optionPrice: option.additionalPrice,
+              selectionCode: option.optionId,
+              selections: [
+                {
+                  code: option.optionId,
+                  label: group.optionsName,
+                  value: option.name,
+                },
+              ],
+            }))
+          ),
+        },
+      ],
+    });
+  }, [product]);
   return (
-    <React.Fragment>
+    <>
       <Script
         src={`https://pay.naver.com/customer/js/${
           isMobile ? "mobile/" : ""
         }innerNaverPayButton.js?site_preference=normal&${Math.round(
           +new Date() / 3600000
         )}`}
+        async
+        strategy="lazyOnload"
         onLoad={initNpay}
+        id="naverpay-script"
       />
       <div
-        id={`iamport-naverpay-product-button-${id}`}
+        id={`iamport-naverpay-product-button`}
         ref={naverBtn}
         className="w-full bg-white flex justify-center"
         style={{
           boxShadow: "inset 0 2px 0 #000",
         }}
       ></div>
-    </React.Fragment>
+    </>
   );
 }

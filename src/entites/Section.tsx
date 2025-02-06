@@ -9,9 +9,9 @@ export default function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-lg mx-auto bg-white p-4 mt-8">
+    <div className="max-w-lg mx-auto bg-white p-4 pt-6 mt-8">
       <SubTitle>{title}</SubTitle>
-      <div className="border-t border-gray-300">{children}</div>
+      {children}
     </div>
   );
 }
