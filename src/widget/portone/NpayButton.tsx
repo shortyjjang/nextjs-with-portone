@@ -111,26 +111,26 @@ export default function NpayButton({ product }: { product: ProductProps }) {
   const [npayParams, setNpayParams] = useState<NpayParams>(initialNpayParams);
   const [nZzim, setNZzim] = useState<NZzimParams[]>([]);
   const { onPaymentCallback } = useContext(PaymentContext);
-  const onClickNaveZzim = () => {
+  const onClickNaveZzim = useCallback(() => {
     const { IMP } = window;
     if (IMP) {
       IMP.naver_zzim({
         naverProducts: nZzim,
       });
     }
-  };
-  const onClickPayment = () => {
+  }, [nZzim]);
+  const onClickPayment = useCallback(() => {
     const { IMP } = window;
     //핸들러 내에서 결제창 호출 함수 호출
     if (IMP) {
       IMP.request_pay(npayParams, onPaymentCallback);
     }
-  };
+  },[npayParams, onPaymentCallback]);
   const initNpay = useCallback(() => {
     if (!naverBtn.current) return;
     const { naver } = window;
-    if(!naver) return;
-    if(document.getElementById("naverpay-script")) return;
+    if (!naver) return;
+    if (document.getElementById("naverpay-script")) return;
     naver.NaverPayButton.apply({
       BUTTON_KEY: `${process.env.NEXT_PUBLIC_NAVER_PAY_BUTTON_KEY}`,
       TYPE: `${/Mobile/.test(navigator.userAgent) ? "M" : ""}A`, //버튼 스타일
@@ -144,7 +144,7 @@ export default function NpayButton({ product }: { product: ProductProps }) {
     if (naverBtn.current) {
       naverBtn.current.innerHTML = "";
     }
-  }, [product, naverBtn.current]);
+  }, [onClickNaveZzim, onClickPayment]);
   useEffect(() => {
     setIsMobile(/Mobile/.test(navigator.userAgent));
   }, []);
@@ -160,8 +160,8 @@ export default function NpayButton({ product }: { product: ProductProps }) {
         image: product.image,
       },
     ]);
-    setNpayParams({
-      ...npayParams,
+    setNpayParams((prev) => ({
+      ...prev,
       naverProducts: [
         {
           id: product.productId, //선택된 옵션이 없는 상품
@@ -196,7 +196,7 @@ export default function NpayButton({ product }: { product: ProductProps }) {
           ),
         },
       ],
-    });
+    }));
   }, [product]);
   return (
     <>

@@ -14,9 +14,6 @@ export interface RequestPayParams {
   merchant_uid: string;
   amount: number;
   buyer_tel: string;
-  buyer_tel1: string;
-  buyer_tel2: string;
-  buyer_tel3: string;
   buyer_postcode: string;
   buyer_addr1: string;
   buyer_email: string;
@@ -33,9 +30,6 @@ const initialState: RequestPayParams = {
   buyer_postcode: "", // 구매자 우편번호
   buyer_addr1: "", // 구매자 주소
   buyer_addr2: "", // 구매자 상세주소
-  buyer_tel1: "", // 구매자 전화번호
-  buyer_tel2: "", // 구매자 전화번호
-  buyer_tel3: "", // 구매자 전화번호
   buyer_email: "", // 구매자 이메일
   delivery_message: "", // 배송메시지
 };

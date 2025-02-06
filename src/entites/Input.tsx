@@ -12,6 +12,7 @@ export default function Input({
   readOnly = false,
   disabled = false,
   onClick,
+  onFocus,
 }: {
   id?: string;
   type?: string;
@@ -24,6 +25,7 @@ export default function Input({
   readOnly?: boolean;
   disabled?: boolean;
   onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
 }) {
   return (
     <input
@@ -40,6 +42,7 @@ export default function Input({
       readOnly={readOnly}
       disabled={disabled}
       onClick={onClick}
+      onFocus={onFocus}
     />
   );
 }

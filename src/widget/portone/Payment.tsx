@@ -5,6 +5,7 @@ import PortoneButton from "./PortoneButton";
 import Input from "@/entites/Input";
 import { PaymentContext } from "./PaymentProvider";
 import Address from "../address/Address";
+import Select from "@/entites/Select";
 
 export default function Payment() {
   const id = useId();
@@ -12,7 +13,7 @@ export default function Payment() {
   return (
     <>
       <Section title="배송지">
-        <div className="grid grid-cols-[100px_1fr] border border-t-0 border-gray-300">
+        <div className="grid grid-cols-[100px_1fr] border border-gray-300">
           <label
             className="flex items-center text-sm px-4 py-5"
             htmlFor={`${id}-name`}
@@ -33,26 +34,83 @@ export default function Payment() {
             }
           />
         </div>
-        <div className="grid grid-cols-[100px_1fr] border border-t-0 border-gray-300 py-2">
+        <Address
+          zipcode={payParams.buyer_postcode}
+          address={payParams.buyer_addr1}
+          addressDetail={payParams.buyer_addr2}
+          onChangeZipcode={(value) =>
+            setPayParams((prev) => ({ ...prev, buyer_postcode: value }))
+          }
+          onChangeAddress={(value) =>
+            setPayParams((prev) => ({ ...prev, buyer_addr1: value }))
+          }
+          onChangeAddressDetail={(value) =>
+            setPayParams((prev) => ({ ...prev, buyer_addr2: value }))
+          }
+        />
+        <div className="grid grid-cols-[100px_1fr] border border-t-0 border-gray-300">
           <label
-            className="flex items text-sm px-4 py-3"
-            htmlFor={`${id}-address01`}
+            className="flex items-center text-sm px-4 py-5"
+            htmlFor={`${id}-tel`}
           >
-            주소검색
+            연락처
           </label>
-          <Address
-            zipcode={payParams.buyer_postcode}
-            address={payParams.buyer_addr1}
-            addressDetail={payParams.buyer_addr2}
-            onChangeZipcode={(value) =>
-              setPayParams((prev) => ({ ...prev, buyer_postcode: value }))
+          <Input
+            id={`${id}-tel`}
+            minLength={1}
+            maxLength={10}
+            value={payParams.buyer_tel
+              .replaceAll(/-/g, "")
+              .replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
+            className="border-x-0 border-y-0"
+            onChange={(e) =>
+              setPayParams((prev) => ({
+                ...prev,
+                buyer_tel: (e.target.value || "").replaceAll(/-/g, ""),
+              }))
             }
-            onChangeAddress={(value) =>
-              setPayParams((prev) => ({ ...prev, buyer_addr1: value }))
+          />
+        </div>
+        <div className="grid grid-cols-[100px_1fr] border border-t-0 border-gray-300">
+          <label
+            className="flex items-center text-sm px-4 py-5"
+            htmlFor={`${id}-email`}
+          >
+            이메일
+          </label>
+          <Input
+            id={`${id}-email`}
+            minLength={1}
+            maxLength={10}
+            value={payParams.buyer_email}
+            className="border-x-0 border-y-0"
+            onChange={(e) =>
+              setPayParams((prev) => ({
+                ...prev,
+                buyer_email: e.target.value || "",
+              }))
             }
-            onChangeAddressDetail={(value) =>
-              setPayParams((prev) => ({ ...prev, buyer_addr2: value }))
+          />
+        </div>
+        <div className="grid grid-cols-[100px_1fr] border border-t-0 border-gray-300">
+          <label
+            className="flex items-center text-sm px-4 py-5"
+            htmlFor={`${id}-email`}
+          >
+            배송메시지
+          </label>
+          <Select
+            options={deliveryMessageOptions}
+            className="border-y-0 border-x-0"
+            placeholder={"선택하세요"}
+            value={payParams.delivery_message}
+            onChange={(value) =>
+              setPayParams((prev) => ({
+                ...prev,
+                delivery_message: value || "",
+              }))
             }
+            isCustom
           />
         </div>
       </Section>
@@ -124,3 +182,26 @@ function PaymentSummary({
     </li>
   );
 }
+
+const deliveryMessageOptions = [
+  {
+    label: "부재 시 경비실에 맡겨주세요",
+    value: "부재 시 경비실에 맡겨주세요",
+  },
+  {
+    label: "부재 시 택배함에 넣어주세요",
+    value: "부재 시 택배함에 넣어주세요",
+  },
+  {
+    label: "부재 시 집 앞에 놔주세요",
+    value: "부재 시 집 앞에 놔주세요",
+  },
+  {
+    label: "배송 전 연락 바랍니다",
+    value: "배송 전 연락 바랍니다",
+  },
+  {
+    label: "배송 시 파손에 주의해 주세요",
+    value: "배송 시 파손에 주의해 주세요",
+  },
+];
