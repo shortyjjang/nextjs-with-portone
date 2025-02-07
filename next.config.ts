@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'all-to-delicious.s3.ap-northeast-2.amazonaws.com',
+        hostname: 'image.msscdn.net',
       },
     ],
   },

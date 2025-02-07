@@ -24,29 +24,48 @@ export default function Payment() {
             id={`${id}-name`}
             minLength={1}
             maxLength={10}
-            value={payParams.name}
+            value={payParams?.customer?.fullName || ""}
             className="border-x-0 border-y-0"
             onChange={(e) =>
               setPayParams((prev) => ({
                 ...prev,
-                name: e.target.value || "",
+                customer: {
+                    ...prev.customer,
+                    fullName: e.target.value || "",
+                },
               }))
             }
           />
         </div>
         <Address
-          zipcode={payParams.buyer_postcode}
-          address={payParams.buyer_addr1}
-          addressDetail={payParams.buyer_addr2}
+          zipcode={payParams?.customer?.zipcode || ""}
+          address={payParams?.customer?.address?.addressLine1 || ""}
+          addressDetail={payParams?.customer?.address?.addressLine2 || ""}
           onChangeZipcode={(value) =>
-            setPayParams((prev) => ({ ...prev, buyer_postcode: value }))
+            setPayParams((prev) => ({ ...prev, customer: { ...prev.customer, zipcode: value } }))
           }
           onChangeAddress={(value) =>
-            setPayParams((prev) => ({ ...prev, buyer_addr1: value }))
+            setPayParams((prev) => ({ ...prev, 
+                customer: { 
+                    ...prev.customer, 
+                    address: { 
+                        addressLine2: prev.customer?.address?.addressLine2 || "",
+                        addressLine1: value 
+                    } 
+                } 
+            }))
           }
           onChangeAddressDetail={(value) =>
-            setPayParams((prev) => ({ ...prev, buyer_addr2: value }))
-          }
+            setPayParams((prev) => ({ ...prev, 
+                customer: { 
+                    ...prev.customer, 
+                    address: { 
+                        addressLine1: prev.customer?.address?.addressLine1 || "",
+                        addressLine2: value 
+                    } 
+                } 
+            }))
+        }
         />
         <div className="grid grid-cols-[100px_1fr] border border-t-0 border-gray-300">
           <label
@@ -59,14 +78,17 @@ export default function Payment() {
             id={`${id}-tel`}
             minLength={1}
             maxLength={10}
-            value={payParams.buyer_tel
+            value={(payParams?.customer?.phoneNumber || "")
               .replaceAll(/-/g, "")
               .replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
             className="border-x-0 border-y-0"
             onChange={(e) =>
               setPayParams((prev) => ({
                 ...prev,
-                buyer_tel: (e.target.value || "").replaceAll(/-/g, ""),
+                customer: {
+                    ...prev.customer,
+                    phoneNumber: (e.target.value || "").replaceAll(/-/g, ""),
+                },
               }))
             }
           />
@@ -82,12 +104,15 @@ export default function Payment() {
             id={`${id}-email`}
             minLength={1}
             maxLength={10}
-            value={payParams.buyer_email}
+            value={payParams?.customer?.email || ""}
             className="border-x-0 border-y-0"
             onChange={(e) =>
               setPayParams((prev) => ({
                 ...prev,
-                buyer_email: e.target.value || "",
+                customer: {
+                    ...prev.customer,
+                    email: e.target.value || "",
+                },
               }))
             }
           />

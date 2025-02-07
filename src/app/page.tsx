@@ -1,139 +1,127 @@
 "use client";
 
-import Section from "@/entites/Section";
-import Title from "@/entites/Title";
-import NpayButton from "@/widget/portone/NpayButton";
-import Payment from "@/widget/portone/Payment";
-import PaymentProvider from "@/widget/portone/PaymentProvider";
+// import Section from "@/entites/Section";
+// import Title from "@/entites/Title";
+// import NpayButton from "@/widget/portone/NpayButton";
+// import Payment from "@/widget/portone/Payment";
+// import PaymentProvider, { ProductProps } from "@/widget/portone/PaymentProvider";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import Image from "next/image";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+// import Image from "next/image";
+// import {  useState } from "react";
+
+// Create a client
+const queryClient = new QueryClient();
+
+async function fetchProducts(page: number) {
+  const response = await fetch(`/api/products?page=${page}`);
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+  return response.json();
+}
 
 export default function Home() {
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  // const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(2);
+  const [products, setProducts] = useState<
+    {
+      goodsNo: number;
+      goodsName: string;
+      goodsLinkUrl: string;
+      thumbnail: string;
+      displayGenderText: string;
+      isSoldOut: boolean;
+      normalPrice: number;
+      price: number;
+      saleRate: number;
+      brand: string;
+      brandName: string;
+      brandLinkUrl: string;
+      reviewCount: number;
+      reviewScore: number;
+      isOptionVisible: boolean;
+      isAd: boolean;
+      infoLabelList: [];
+      imageLabelList: [];
+      clickTrackers: [];
+      impressionTrackers: [];
+      snap: null;
+      score: number;
+    }[]
+  >([]);
 
-  const product = {
-    name: "경북 샤인머스켓 2kg (가정용 5~6수, 특등급 3~4수, 프리미엄 2~3수)",
-    price: 17000,
-    productId: "product01",
-    desc: "경북 샤인머스켓 2kg (가정용 5~6수, 특등급 3~4수, 프리미엄 2~3수)",
-    image:
-      "https://all-to-delicious.s3.ap-northeast-2.amazonaws.com/atd/a2dcorp.co.kr/admin/product/detail/product_image/8b0c394cc3444b1cb551c5823a16c3e7.jpg",
-    optionGroups: [
-      {
-        name: "쥬스용(멍/흠짓)",
-        optionsName: "무게",
-        groupId: "group01",
-        options: [
-          {
-            name: "2kg",
-            optionId: "option01",
-            additionalPrice: 15000,
-            quantity: 1,
-          },
-        ],
-      },
-    ],
-    deliveryFee: 0,
-  };
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["products", currentPage],
+    queryFn: async () => {
+      if (totalPages <= currentPage) return [];
+      const request = await fetch(`/api/product?page=${currentPage}`).then(
+        (res) => res.json()
+      );
+      setTotalPages(request.total_pages);
+      return request.lists;
+    },
+    staleTime: 5000,
+  });
+
+  useEffect(() => {
+    if (data) {
+      console.log(data);
+      setProducts((prevProducts) => [...prevProducts, ...(data || [])]);
+    }
+  }, [data]);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error</div>;
+
   return (
-    <PaymentProvider>
-      <Title title="주문하기" className="mt-8" />
-      <Section title="주문 상품">
-        <div className="grid grid-cols-[auto_100px] gap-x-4 gap-y-1 py-4 border-t border-black">
-          <h3 className="font-bold">{product.name}</h3>
-          <Image
-            src={product.image}
-            alt={product.name}
-            width={100}
-            height={100}
-          />
-          <ul className="text-gray-500 text-sm">
-            <li>
-              옵션:{" "}
-              {product.optionGroups.map((group) =>
-                group.options.map(
-                  (option) => `${group.name} / 
-                  ${group.optionsName}: ${option.name} 
-                  (+${(option.additionalPrice || 0).toLocaleString()}원)`
-                )
+    <QueryClientProvider client={queryClient}>
+      <div className="grid grid-cols-3 gap-4">
+        {products.map((item) => (
+          <div key={item.goodsNo}>
+            <div className="aspect-square bg-gray-100 relative">
+              <Image
+                src={item.thumbnail}
+                alt={item.goodsName}
+                fill
+                sizes="(max-width: 600px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover"
+                priority={true}
+              />
+              {item.isAd && (
+                <span className="text-red-500 absolute bottom-0 left-0">AD</span>
               )}
-            </li>
-            <li>
-              구매수량:{" "}
-              {product.optionGroups
-                .reduce(
-                  (acc, group) =>
-                    acc +
-                    group.options.reduce(
-                      (acc, option) => acc + option.quantity,
-                      0
-                    ),
-                  0
-                )
-                .toLocaleString()}
-              개
-            </li>
-          </ul>
-        </div>
-        <ul className="text-gray-500 border-y border-gray-300 py-3">
-          <li className="flex justify-between">
-            <label>상품금액</label>
-            <span>
-              {product.optionGroups
-                .reduce(
-                  (acc, group) =>
-                    acc +
-                    group.options.reduce(
-                      (acc, option) =>
-                        acc +
-                        (product.price + option.additionalPrice) *
-                          option.quantity,
-                      0
-                    ),
-                  0
-                )
-                .toLocaleString()}
-              원
-            </span>
-          </li>
-          <li className="flex justify-between">
-            <label>배송비</label>
-            <span>{(product.deliveryFee || 0).toLocaleString()}원</span>
-          </li>
-          <li className="flex justify-between text-black">
-            <label>총 상품금액</label>
-            <span>
-              {(
-                product.optionGroups.reduce(
-                  (acc, group) =>
-                    acc +
-                    group.options.reduce(
-                      (acc, option) =>
-                        acc +
-                        (product.price + option.additionalPrice) *
-                          option.quantity,
-                      0
-                    ),
-                  0
-                ) + product.deliveryFee
-              ).toLocaleString()}
-              원
-            </span>
-          </li>
-        </ul>
-        {!paymentMethod && (
-          <div className="flex flex-col gap-2 pt-4">
-            <NpayButton product={product} />
-            <button
-              className="bg-blue-500 text-white px-4 py-3 font-bold"
-              onClick={() => setPaymentMethod("portone")}
-            >
-              결제하기
-            </button>
+            </div>
+            <div className="text-gray-500 text-sm flex justify-between mt-2">
+              <div>{item.brandName}</div>
+              <div>
+                <b className="text-red-500 font-bold">
+                  ★ {(item?.reviewScore || 0).toLocaleString()}
+                </b>
+                ({(item?.reviewCount || 0).toLocaleString()})
+              </div>
+            </div>
+            <div className="text-black font-bold line-clamp-2">
+              {item.goodsName}
+            </div>
+            <div className="text-gray-500 text-sm">
+              {(item?.price).toLocaleString()}{" "}
+              {item.price !== item.normalPrice && (
+                <span className="text-gray-500 line-through">
+                  {item.normalPrice.toLocaleString()}
+                </span>
+              )}
+            </div>
           </div>
-        )}
-      </Section>
-      {paymentMethod === "portone" && <Payment />}
-    </PaymentProvider>
+        ))}
+      </div>
+    </QueryClientProvider>
   );
+
 }

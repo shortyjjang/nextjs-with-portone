@@ -12,7 +12,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { PaymentContext } from "./PaymentProvider";
+import { PaymentContext, ProductProps } from "./PaymentProvider";
 
 declare global {
   interface Window {
@@ -86,25 +86,6 @@ const initialNpayParams: NpayParams = {
   },
   naverProducts: [],
 };
-interface ProductProps {
-  name: string;
-  price: number;
-  productId: string;
-  desc: string;
-  image: string;
-  optionGroups: {
-    name: string;
-    optionsName: string;
-    groupId: string;
-    options: {
-      name: string;
-      optionId: string;
-      additionalPrice: number;
-      quantity: number;
-    }[];
-  }[];
-  deliveryFee: number;
-}
 export default function NpayButton({ product }: { product: ProductProps }) {
   const naverBtn = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
