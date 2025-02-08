@@ -1,14 +1,12 @@
-import Section from '@/entites/Section';
-import Title from '@/entites/Title';
-import Payment from '@/widget/portone/Payment';
-import PaymentProvider from '@/widget/portone/PaymentProvider';
-import React from 'react'
+import Title from "@/entites/Title";
+import Payment from "@/widget/portone/Payment";
+import React from "react";
 
 export default function PaymentPage() {
-    return (
-      <PaymentProvider>
-        <Title title="주문하기" className="mt-8" />
-        {/* <Section title="주문 상품">
+  return (
+    <>
+      <Title title="주문하기" className="mt-8" />
+      {/* <Section title="주문 상품">
           <div className="grid grid-cols-[auto_100px] gap-x-4 gap-y-1 py-4 border-t border-black">
             <h3 className="font-bold">{product.name}</h3>
             <Image
@@ -92,8 +90,7 @@ export default function PaymentPage() {
             </li>
           </ul>
         </Section> */}
-        <Payment />
-      </PaymentProvider>
-    );
+      <Payment />
+    </>
+  );
 }
-

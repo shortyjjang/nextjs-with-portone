@@ -1,34 +1,34 @@
-import React, { useContext } from "react";
-import { PaymentContext } from "./PaymentProvider";
+import React from "react";
 import * as PortOne from "@portone/browser-sdk/v2";
+import usePayment from "@/store/payParam";
+import useSelectedItem from "@/store/selectedItem";
+import getOrderId from "@/lib/payment/getOrderId";
+import useUser from "@/store/auth";
 
 export default function PortoneButton() {
-  const { payParams } = useContext(PaymentContext);
+  const { payParam } = usePayment()
+  const { selectedItem } = useSelectedItem();
+  const { user } = useUser();
   const handlePayment = async () => {
     if (!PortOne) return;
-    const paymentInfo = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/payment/request`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-        body: JSON.stringify(payParams),
-      }
-    ).then((res) => res.json());
+    if (!selectedItem) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const orderId = await getOrderId({
+      item: selectedItem,
+      token: token,
+    });
 
-    const { paymentId, customerId } = paymentInfo;
-    let params = payParams;
-    params = {
-      ...params,
-      paymentId: paymentId,
+    let Param = payParam;
+    Param = {
+      ...Param,
+      paymentId: orderId,
       customer: {
-        ...params.customer,
-        customerId: customerId || "",
+        ...Param.customer,
+        customerId: user?.id || "",
       },
     };
-    const response = await PortOne.requestPayment(params);
+    const response = await PortOne.requestPayment(Param);
 
     if (response?.code !== undefined) {
       // 오류 발생

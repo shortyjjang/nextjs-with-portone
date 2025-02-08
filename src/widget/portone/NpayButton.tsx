@@ -1,5 +1,8 @@
 "use client";
 
+import paymentCallback from "@/lib/payment/callback";
+import getOrderId from "@/lib/payment/getOrderId";
+import useSelectedItem from "@/store/selectedItem";
 //주문형 네이버페이 버튼 호출 함수
 //반드시 찜하기가 포함되어야함
 //장바구니가 반드시 필요함
@@ -7,12 +10,10 @@
 import Script from "next/script";
 import React, {
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { PaymentContext, ProductProps } from "./PaymentProvider";
 
 declare global {
   interface Window {
@@ -40,27 +41,27 @@ interface NpayParams {
     taxType: "TAX" | "TAX_FREE"; //TAX or TAX_FREE
     quantity: number;
     infoUrl: string;
-    imageUrl: string;
-    shipping?: {
-      baseFee: number;
-      method: "DELIVERY";
-      feePayType: "PREPAYED";
-      feeRule: {
-        repeatByQty: 1;
+      imageUrl: string;
+      shipping?: {
+        baseFee: number;
+        method: "DELIVERY";
+        feePayType: "PREPAYED";
+        feeRule: {
+          repeatByQty: 1;
+        };
+        groupId: string;
       };
-      groupId: string;
-    };
-    options?: {
-      optionQuantity: number;
-      optionPrice: number;
-      selectionCode: string;
-      selections: {
-        code: string;
-        label: string;
-        value: string;
+      options?: {
+        optionQuantity: number;
+        optionPrice: number;
+        selectionCode: string;
+        selections: {
+          code: string;
+          label: string;
+          value: string;
+        }[];
       }[];
     }[];
-  }[];
 }
 interface NZzimParams {
   id: string;
@@ -86,12 +87,12 @@ const initialNpayParams: NpayParams = {
   },
   naverProducts: [],
 };
-export default function NpayButton({ product }: { product: ProductProps }) {
+export default function NpayButton() {
   const naverBtn = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [npayParams, setNpayParams] = useState<NpayParams>(initialNpayParams);
   const [nZzim, setNZzim] = useState<NZzimParams[]>([]);
-  const { onPaymentCallback } = useContext(PaymentContext);
+  const { selectedItem } = useSelectedItem();
   const onClickNaveZzim = useCallback(() => {
     const { IMP } = window;
     if (IMP) {
@@ -100,13 +101,20 @@ export default function NpayButton({ product }: { product: ProductProps }) {
       });
     }
   }, [nZzim]);
-  const onClickPayment = useCallback(() => {
+  const onClickPayment = useCallback(async () => {
     const { IMP } = window;
+    if (!selectedItem) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const orderId = await getOrderId({
+      item: selectedItem,
+      token: token,
+    });
     //핸들러 내에서 결제창 호출 함수 호출
     if (IMP) {
-      IMP.request_pay(npayParams, onPaymentCallback);
+      IMP.request_pay(npayParams, (result: any) => paymentCallback(result, orderId));
     }
-  },[npayParams, onPaymentCallback]);
+  }, [npayParams]);
   const initNpay = useCallback(() => {
     if (!naverBtn.current) return;
     const { naver } = window;
@@ -130,30 +138,31 @@ export default function NpayButton({ product }: { product: ProductProps }) {
     setIsMobile(/Mobile/.test(navigator.userAgent));
   }, []);
   useEffect(() => {
+    if (!selectedItem) return;
     setNZzim([
       {
-        id: product.productId,
-        name: product.name,
-        desc: product.desc,
-        uprice: product.price,
-        url: `${process.env.NEXT_PUBLIC_URL}/product/${product.productId}`,
-        thumb: product.image,
-        image: product.image,
+        id: selectedItem.goodsNo.toString(),
+        name: selectedItem.goodsName,
+        desc: selectedItem.displayGenderText,
+        uprice: selectedItem.price,
+        url: `${process.env.NEXT_PUBLIC_URL}/product/${selectedItem.goodsNo}`,
+        thumb: selectedItem.thumbnail,
+        image: selectedItem.thumbnail,
       },
     ]);
     setNpayParams((prev) => ({
       ...prev,
       naverProducts: [
         {
-          id: product.productId, //선택된 옵션이 없는 상품
-          name: product.name,
-          basePrice: product.price,
+          id: selectedItem?.goodsNo.toString(), //선택된 옵션이 없는 상품
+          name: selectedItem?.goodsName,
+          basePrice: selectedItem?.price,
           taxType: "TAX", //TAX or TAX_FREE
-          quantity: 1,
-          infoUrl: `${process.env.NEXT_PUBLIC_URL}/product/${product.productId}`,
-          imageUrl: product.image,
+          quantity: selectedItem?.quantity,
+          infoUrl: `${process.env.NEXT_PUBLIC_URL}/product/${selectedItem?.goodsNo}`,
+          imageUrl: selectedItem?.thumbnail,
           shipping: {
-            baseFee: product.deliveryFee,
+            baseFee: 0,
             method: "DELIVERY",
             feePayType: "PREPAYED",
             feeRule: {
@@ -161,24 +170,10 @@ export default function NpayButton({ product }: { product: ProductProps }) {
             },
             groupId: "shipping01",
           },
-          options: (product.optionGroups || []).flatMap((group) =>
-            group.options.map((option) => ({
-              optionQuantity: option.quantity,
-              optionPrice: option.additionalPrice,
-              selectionCode: option.optionId,
-              selections: [
-                {
-                  code: option.optionId,
-                  label: group.optionsName,
-                  value: option.name,
-                },
-              ],
-            }))
-          ),
         },
       ],
     }));
-  }, [product]);
+  }, [selectedItem, selectedItem?.quantity]);
   return (
     <>
       <Script

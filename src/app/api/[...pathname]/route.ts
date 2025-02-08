@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
           lists: data,
           current_page: 1,
           total_count: 100,
-          total_pages: 10,
+          total_pages: 1,
         }),
         {
           status: 200,

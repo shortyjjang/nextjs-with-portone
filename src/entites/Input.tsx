@@ -13,6 +13,7 @@ export default function Input({
   disabled = false,
   onClick,
   onFocus,
+  onKeyDown,
 }: {
   id?: string;
   type?: string;
@@ -26,6 +27,7 @@ export default function Input({
   disabled?: boolean;
   onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
   return (
     <input
@@ -43,6 +45,7 @@ export default function Input({
       disabled={disabled}
       onClick={onClick}
       onFocus={onFocus}
+      onKeyDown={onKeyDown}
     />
   );
 }
