@@ -1,13 +1,13 @@
-import Image from "next/image";
 import React from "react";
 import useSelectedItem, { ProductProps } from "@/store/selectedItem";
+import LazyImage from "@/entites/LazyImage";
 
 export default function ProductItem({ item }: { item: ProductProps }) {
   const { setSelectedItem } = useSelectedItem()
   return (
     <div>
       <div className="aspect-square bg-gray-100 relative">
-        <Image
+        <LazyImage
           src={item.thumbnail}
           alt={item.goodsName}
           fill
