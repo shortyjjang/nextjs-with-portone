@@ -1,42 +1,39 @@
 import { fetchProduct } from "@/api/product";
-import { dehydrate, QueryClient } from "@tanstack/react-query";
+import { dehydrate, QueryClient, useQuery } from "@tanstack/react-query";
 import { GetServerSideProps } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
+import { useParams } from "next/navigation";
 
 const initialProduct = {
   title: "",
   description: "",
   ogTitle: "",
   ogImage: "",
+  name: "",
+  category: "",
+  brand: "",
+  id: "",
 };
-
+// SSR로 상품 데이터를 가져오기
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const productId = context.params?.id as string;
-  const queryClient = new QueryClient();
-
-  const product = await fetchProduct(productId);
-  await queryClient.prefetchQuery({
-    queryKey: ["product", productId],
-    queryFn: () => ({
-      ...initialProduct,
-      ...product,
-    }),
-    staleTime: 1000 * 60 * 5,  // 5분 동안은 새로고침해도 서버 요청 X
-    gcTime: 1000 * 60 * 30,    // 30분 후 메모리에서 삭제
-  });
-  //  •	일반 상품 상세: staleTime: 5분, gcTime: 30분
-  //  •	빠르게 변하는 데이터 (ex: 재고, 가격): staleTime: 1분, gcTime: 10분
-  //  •	거의 변하지 않는 데이터 (ex: 브랜드, 설명): staleTime: 10~30분, gcTime: 1시간~24시간
-  //  •	사용자별 데이터 (ex: 개인 할인): staleTime: 0, gcTime: 5~10분
-
-  return {
-    props: {
-      dehydratedState: dehydrate(queryClient),
-      product, // SEO용으로 개별 데이터 전달
-    },
+    const productId = context.params?.id;
+    const queryClient = new QueryClient();
+  
+    // 서버에서 데이터 미리 가져오기
+    await queryClient.prefetchQuery({
+      queryKey: ["product", productId],
+      queryFn: () => fetchProduct(productId as string)
+    });
+  
+    return {
+      props: {
+        dehydratedState: dehydrate(queryClient),
+      },
+    };
   };
-};
+  
+  
 
 const ProductDetail = dynamic(
   () => import("@/features/product/ProductDetail"),
@@ -46,7 +43,17 @@ const ProductDetail = dynamic(
   }
 );
 
-export default function ProductPage({ product }: { product: any }) {
+export default function ProductPage() {
+  const { id } = useParams();
+  // 클라이언트에서 동일한 데이터 요청 (이미 캐시에 있음)
+  const { data } = useQuery({
+    queryKey: ["product", id], 
+    queryFn: () => fetchProduct(id as string),
+    staleTime: 1000 * 60 * 5 // 5분 동안은 fresh 상태 유지
+  });
+  
+  const product = data || initialProduct;
+  
   return (
     <>
       <Head>
@@ -78,7 +85,7 @@ export default function ProductPage({ product }: { product: any }) {
         <meta name="author" content={product.brand} />
       </Head>
 
-      <ProductDetail />
+      <ProductDetail product={product} />
     </>
   );
 }

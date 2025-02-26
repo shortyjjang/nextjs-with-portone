@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import React from 'react'
 
-export default function ProductDetail() {
+export default function ProductDetail({product}: {product: any}) {
   const { id } = useParams();
   const { data } = useQuery({
     queryKey: ["product", id],
@@ -12,7 +12,7 @@ export default function ProductDetail() {
     gcTime: 1000 * 60 * 10,    // 10분 후 메모리에서 삭제
   });
   return <div>
-    <h1>{data?.title}</h1>
+    <h1>{product?.title}</h1>
     <div>{data?.price}</div>
     <div dangerouslySetInnerHTML={{ __html: (data?.productInfo || "") }} />
   </div>;
