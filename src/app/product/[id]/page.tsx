@@ -1,7 +1,7 @@
 import { fetchProduct } from "@/api/product";
-import ProductDetail from "@/features/product/ProductDetail";
 import { dehydrate, QueryClient } from "@tanstack/react-query";
 import { GetServerSideProps } from "next";
+import dynamic from "next/dynamic";
 import Head from "next/head";
 
 const initialProduct = {
@@ -22,7 +22,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       ...initialProduct,
       ...product,
     }),
+    staleTime: 1000 * 60 * 5,  // 5분 동안은 새로고침해도 서버 요청 X
+    gcTime: 1000 * 60 * 30,    // 30분 후 메모리에서 삭제
   });
+  //  •	일반 상품 상세: staleTime: 5분, gcTime: 30분
+  //  •	빠르게 변하는 데이터 (ex: 재고, 가격): staleTime: 1분, gcTime: 10분
+  //  •	거의 변하지 않는 데이터 (ex: 브랜드, 설명): staleTime: 10~30분, gcTime: 1시간~24시간
+  //  •	사용자별 데이터 (ex: 개인 할인): staleTime: 0, gcTime: 5~10분
 
   return {
     props: {
@@ -31,6 +37,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     },
   };
 };
+
+const ProductDetail = dynamic(
+  () => import("@/features/product/ProductDetail"),
+  {
+    ssr: false, // 서버 사이드 렌더링 방지 (클라이언트에서만 로드)
+    loading: () => <p>Loading...</p>, // 로딩 중 표시할 UI
+  }
+);
 
 export default function ProductPage({ product }: { product: any }) {
   return (
